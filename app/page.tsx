@@ -1,8 +1,9 @@
 import { Post } from "./types";
+import config from "./config.json";
 
 export default async function Home() {
-  const BASE_URL = process.env.BASE_URL;
-  const res = await fetch(`${BASE_URL}/posts`, {
+  const res = await fetch(`${config.apiUrl}/posts`, {
+    headers: { "API-Key": config.apiKey },
     next: { revalidate: 60 * 10 },
   });
   const json = await res.json();
