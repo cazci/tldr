@@ -1,16 +1,30 @@
-import { Post } from "./types";
-import config from "./config.json";
+"use client";
 
-export default async function Home() {
-  const res = await fetch(`${config.apiUrl}/posts`, {
-    headers: { "API-Key": config.apiKey },
-    next: { revalidate: 60 * 10 },
-  });
-  const json = await res.json();
-  if (!res.ok) {
-    throw new Error("Data fetch failed");
-  }
-  const posts: Post[] = Array.isArray(json) ? json : [];
+import { useEffect, useState } from "react";
+import { Post } from "./types";
+import { fetchConfigs } from "./actions/fetchConfigs";
+
+export default function Home() {
+  const [posts, setPosts] = useState<Post[]>([]);
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      const { apiUrl, apiKey } = await fetchConfigs();
+      if (!apiUrl || !apiKey) {
+        throw new Error("Config not found");
+      }
+      const res = await fetch(`${apiUrl}/posts`, {
+        headers: { "API-Key": apiKey },
+        next: { revalidate: 60 * 10 },
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error("Data fetch failed");
+      }
+      setPosts(json);
+    };
+    fetchPosts();
+  }, []);
 
   return (
     <main className="flex min-h-screen flex-col items-center p-24">
@@ -22,21 +36,25 @@ export default async function Home() {
         </div>
       </div>
       <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mt-8 lg:mb-0 lg:grid-cols-3 lg:gap-8 lg:text-left">
-        {posts.map((post) => (
-          <a
-            key={post.id}
-            href="#"
-            className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          >
-            <div className="mb-3 text-2xl font-semibold">
-              {post.title}
-              <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-                &nbsp;⇨
-              </span>
-            </div>
-            <p className="m-0 max-w-[30ch] text-sm opacity-50">Lorem ipsum</p>
-          </a>
-        ))}
+        {posts.length ? (
+          posts.map((post) => (
+            <a
+              key={post.id}
+              href="#"
+              className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
+            >
+              <div className="mb-3 text-2xl font-semibold">
+                {post.title}
+                <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
+                  &nbsp;⇨
+                </span>
+              </div>
+              <p className="m-0 max-w-[30ch] text-sm opacity-50">Lorem ipsum</p>
+            </a>
+          ))
+        ) : (
+          <div>Looks empty!</div>
+        )}
       </div>
     </main>
   );
